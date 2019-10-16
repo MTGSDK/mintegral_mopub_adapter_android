@@ -1,3 +1,4 @@
-这个仓库主要是为了方便开发者通过mopub聚合minegral的android广告sdk
-你可以通过jcenter直接集成接入从 
- compile 'com.mintegral.thrid.adapter:mopub_adapter:3.3.0'
+
+Mintegral adapter jar for Mopub Unity
+-----
+More information refer to [guide](http://cdn-adn.rayjump.com/cdn-adn/v2/markdown_v2/index.html?file=sdk-m_sdk_mopub-unity&lang=en)
