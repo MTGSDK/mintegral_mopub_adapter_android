@@ -30,7 +30,7 @@ The adapter is available via:
     ```
 
     dependencies {
-        implementation 'com.mintegral.thrid.adapter:mopub_adapter:3.4.1'
+        implementation 'com.mintegral.thrid.adapter:mopub_adapter:3.4.2'
     }
     ```
 
