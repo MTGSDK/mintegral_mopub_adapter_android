@@ -79,10 +79,11 @@ public class MintegralRewardVideo extends CustomEventRewardedVideo implements Re
 
     @Override
     public void onAdClose(boolean b, String s, float v) {
-        MoPubRewardedVideoManager.onRewardedVideoClosed(MintegralRewardVideo.class, unitId);
+        
         if (b) {
             MoPubRewardedVideoManager.onRewardedVideoCompleted(MintegralRewardVideo.class, null, MoPubReward.success(s, (int) v));
         }
+        MoPubRewardedVideoManager.onRewardedVideoClosed(MintegralRewardVideo.class, unitId);
 
     }
 
