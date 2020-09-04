@@ -3,15 +3,16 @@ package com.mintegral.adapter.banner.banneradapter;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.widget.FrameLayout;
 
 import com.mintegral.adapter.common.AdapterCommonUtil;
 import com.mintegral.adapter.common.AdapterTools;
+import com.mintegral.adapter.common.MIntegralSDKManager;
 import com.mintegral.msdk.MIntegralConstans;
 import com.mintegral.msdk.MIntegralSDK;
 import com.mintegral.msdk.out.BannerAdListener;
@@ -34,29 +35,31 @@ public class MintegralXBanner extends CustomEventBanner implements BannerAdListe
 
     @Override
     protected void loadBanner(Context context, CustomEventBannerListener customEventBannerListener, Map<String, Object> localExtras, Map<String, String> serverExtras) {
-        Log.e(TAG, "loadBanner: " );
+        Log.e(TAG, "loadBanner: ");
         mBannerListener = customEventBannerListener;
 
-        final String unit_id;
+        final String unitId;
+        String placementId = "";
 
-        if (extrasAreValid(serverExtras, context,localExtras)) {
-            unit_id = serverExtras.get("unitId");
+        if (extrasAreValid(serverExtras, context, localExtras)) {
+            unitId = serverExtras.get("unitId");
+            placementId = serverExtras.get("placementId");
         } else {
             customEventBannerListener.onBannerFailed(MoPubErrorCode.ADAPTER_CONFIGURATION_ERROR);
             return;
         }
 
-        if (localExtras.containsKey(AD_WIDTH) && localExtras.containsKey(AD_HEIGHT)){
+        if (localExtras.containsKey(AD_WIDTH) && localExtras.containsKey(AD_HEIGHT)) {
             int adwidth = (int) localExtras.get(AD_WIDTH);
             int adheight = (int) localExtras.get(AD_HEIGHT);
-            Log.e(TAG, "loadBanner: adwidth:"+adwidth +"- adheight:"+adheight );
+            Log.e(TAG, "loadBanner: adwidth: " + adwidth + "- adheight: " + adheight);
 
-            final int w = dip2px(context,adwidth);
-            final int h = dip2px(context,adheight);
+            final int w = dip2px(context, adwidth);
+            final int h = dip2px(context, adheight);
 
             mtgBannerView = new MTGBannerView(context);
             mtgBannerView.setVisibility(View.GONE);
-            mtgBannerView.init(new BannerSize(BannerSize.DEV_SET_TYPE,adwidth,adheight),unit_id);
+            mtgBannerView.init(new BannerSize(BannerSize.DEV_SET_TYPE, adwidth, adheight), placementId, unitId);
 
             mtgBannerView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
                 @Override
@@ -70,51 +73,44 @@ public class MintegralXBanner extends CustomEventBanner implements BannerAdListe
 
             mtgBannerView.setBannerAdListener(this);
             mtgBannerView.load();
-
         }
-
-
-
-
-
     }
 
     @Override
     protected void onInvalidate() {
-        Log.e(TAG, "onInvalidate: " );
-        if (mtgBannerView!=null){
+        Log.e(TAG, "onInvalidate: ");
+        if (mtgBannerView != null) {
             mtgBannerView.release();
         }
     }
 
-    private boolean extrasAreValid(final Map<String, String> serverExtras, Context mContext,Map<String, Object> localExtras) {
+    private boolean extrasAreValid(final Map<String, String> serverExtras, Context mContext, Map<String, Object> localExtras) {
         final String appid = serverExtras.get("appId");
         final String appKey = serverExtras.get("appKey");
         final String unitId = serverExtras.get("unitId");
 
         AdapterCommonUtil.addChannel();
         if (!TextUtils.isEmpty(appid) && !TextUtils.isEmpty(appKey) && !TextUtils.isEmpty(unitId)) {
-            MIntegralSDK sdk = MIntegralSDKFactory.getMIntegralSDK();
-            if(!AdapterTools.canCollectPersonalInformation()){
-                sdk.setUserPrivateInfoType(mContext, MIntegralConstans.AUTHORITY_ALL_INFO, MIntegralConstans.IS_SWITCH_OFF);
-            }else{
-                sdk.setUserPrivateInfoType(mContext, MIntegralConstans.AUTHORITY_ALL_INFO, MIntegralConstans.IS_SWITCH_ON);
+            MIntegralSDK mIntegralSDK = MIntegralSDKManager.getInstance().getMIntegralSDK();
+            if (!AdapterTools.canCollectPersonalInformation()) {
+                mIntegralSDK.setUserPrivateInfoType(mContext, MIntegralConstans.AUTHORITY_ALL_INFO, MIntegralConstans.IS_SWITCH_OFF);
+            } else {
+                mIntegralSDK.setUserPrivateInfoType(mContext, MIntegralConstans.AUTHORITY_ALL_INFO, MIntegralConstans.IS_SWITCH_ON);
             }
 
-            Map<String, String> map = sdk.getMTGConfigurationMap(appid,
-                    appKey);
             if (mContext instanceof Activity) {
-                sdk.init(map, ((Activity) mContext).getApplication());
+                final Context context = ((Activity) mContext).getApplication();
+                MIntegralSDKManager.getInstance().initialize(context, appKey, appid, false);
             } else if (mContext instanceof Application) {
-                sdk.init(map, mContext);
+                final Context context = mContext;
+                MIntegralSDKManager.getInstance().initialize(context, appKey, appid, false);
             }
-            AdapterCommonUtil.parseLocalExtras(localExtras,sdk);
+            AdapterCommonUtil.parseLocalExtras(localExtras, mIntegralSDK);
             return true;
         }
 
         return false;
     }
-
 
 
     public static int dip2px(Context context, float dipValue) {
@@ -125,15 +121,15 @@ public class MintegralXBanner extends CustomEventBanner implements BannerAdListe
 
     @Override
     public void onLoadFailed(String s) {
-        if (mBannerListener != null){
+        if (mBannerListener != null) {
             mBannerListener.onBannerFailed(MoPubErrorCode.NO_FILL);
         }
-        Log.e(TAG, "onLoadFailed: "+s );
+        Log.e(TAG, "onLoadFailed: " + s);
     }
 
     @Override
     public void onLoadSuccessed() {
-        if (mBannerListener != null && mtgBannerView != null){
+        if (mBannerListener != null && mtgBannerView != null) {
             mBannerListener.onBannerLoaded(mtgBannerView);
             mtgBannerView.setVisibility(View.VISIBLE);
         }
@@ -142,17 +138,16 @@ public class MintegralXBanner extends CustomEventBanner implements BannerAdListe
 
     @Override
     public void onLogImpression() {
-        if (mBannerListener!=null){
+        if (mBannerListener != null) {
             mBannerListener.onBannerImpression();
         }
         Log.d(TAG, "onLogImpression: ");
     }
 
 
-
     @Override
     public void onClick() {
-        if (mBannerListener!=null){
+        if (mBannerListener != null) {
             mBannerListener.onBannerClicked();
         }
         Log.d(TAG, "onClick: ");
@@ -160,7 +155,7 @@ public class MintegralXBanner extends CustomEventBanner implements BannerAdListe
 
     @Override
     public void onLeaveApp() {
-        if (mBannerListener!=null){
+        if (mBannerListener != null) {
             mBannerListener.onLeaveApplication();
         }
         Log.d(TAG, "onLeaveApp: ");
@@ -178,5 +173,10 @@ public class MintegralXBanner extends CustomEventBanner implements BannerAdListe
         Log.d(TAG, "closeFullScreen: ");
     }
 
+    @Override
+    public void onCloseBanner() {
 
+        Log.d(TAG, "onCloseBanner: ");
+
+    }
 }

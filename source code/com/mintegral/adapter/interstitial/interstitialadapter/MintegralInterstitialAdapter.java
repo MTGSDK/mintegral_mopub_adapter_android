@@ -3,11 +3,14 @@ package com.mintegral.adapter.interstitial.interstitialadapter;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.mintegral.adapter.common.AdapterCommonUtil;
 import com.mintegral.adapter.common.AdapterTools;
+import com.mintegral.adapter.common.MIntegralSDKManager;
 import com.mintegral.msdk.MIntegralConstans;
 import com.mintegral.msdk.MIntegralSDK;
 import com.mintegral.msdk.out.InterstitialListener;
@@ -25,16 +28,17 @@ import java.util.Map;
  */
 
 public class MintegralInterstitialAdapter extends CustomEventInterstitial implements InterstitialListener {
-    MTGInterstitialHandler mInterstitialHandler ;
+    MTGInterstitialHandler mInterstitialHandler;
     CustomEventInterstitialListener mCustomEventInterstitialListener;
     private String appid = "";
     private String appkey = "";
     private String unitId = "";
+
     @Override
-    protected void loadInterstitial(Context context, CustomEventInterstitialListener customEventInterstitialListener, Map<String, Object> localExtras, Map<String, String> serverExtras) {
+    protected void loadInterstitial(Context mContext, CustomEventInterstitialListener customEventInterstitialListener, Map<String, Object> localExtras, Map<String, String> serverExtras) {
 
         HashMap<String, Object> hashMap = new HashMap<String, Object>();
-      mCustomEventInterstitialListener = customEventInterstitialListener;
+        mCustomEventInterstitialListener = customEventInterstitialListener;
 
         try {
             appid = serverExtras.get("appId");
@@ -45,29 +49,29 @@ public class MintegralInterstitialAdapter extends CustomEventInterstitial implem
             e1.printStackTrace();
         }
 
-        if(!TextUtils.isEmpty(appid) && !TextUtils.isEmpty(appkey) && !TextUtils.isEmpty(unitId)){
-            MIntegralSDK sdk = MIntegralSDKFactory.getMIntegralSDK();
-            if(!AdapterTools.canCollectPersonalInformation()){
-                sdk.setUserPrivateInfoType(context, MIntegralConstans.AUTHORITY_ALL_INFO,MIntegralConstans.IS_SWITCH_OFF);
-            }else{
-                sdk.setUserPrivateInfoType(context,MIntegralConstans.AUTHORITY_ALL_INFO,MIntegralConstans.IS_SWITCH_ON);
+        if (!TextUtils.isEmpty(appid) && !TextUtils.isEmpty(appkey) && !TextUtils.isEmpty(unitId)) {
+            if (!AdapterTools.canCollectPersonalInformation()) {
+                MIntegralSDKManager.getInstance().getMIntegralSDK().setUserPrivateInfoType(mContext, MIntegralConstans.AUTHORITY_ALL_INFO, MIntegralConstans.IS_SWITCH_OFF);
+            } else {
+                MIntegralSDKManager.getInstance().getMIntegralSDK().setUserPrivateInfoType(mContext, MIntegralConstans.AUTHORITY_ALL_INFO, MIntegralConstans.IS_SWITCH_ON);
             }
-            Map<String, String> map = sdk.getMTGConfigurationMap(appid,
-                    appkey);
-            if (context instanceof Activity) {
-                sdk.init(map, ((Activity) context).getApplication());
-            } else if (context instanceof Application) {
-                sdk.init(map, context);
+
+            if (mContext instanceof Activity) {
+                final Context context = ((Activity) mContext).getApplication();
+                MIntegralSDKManager.getInstance().initialize(context, appkey, appid, false);
+            } else if (mContext instanceof Application) {
+                final Context context = mContext;
+                MIntegralSDKManager.getInstance().initialize(context, appkey, appid, false);
             }
-            AdapterCommonUtil.parseLocalExtras(localExtras,sdk);
-        }else{
-            if(mCustomEventInterstitialListener  != null){
+            AdapterCommonUtil.parseLocalExtras(localExtras, MIntegralSDKManager.getInstance().getMIntegralSDK());
+        } else {
+            if (mCustomEventInterstitialListener != null) {
                 mCustomEventInterstitialListener.onInterstitialFailed(MoPubErrorCode.ADAPTER_CONFIGURATION_ERROR);
             }
         }
         //设置广告位ID 必填
         hashMap.put(MIntegralConstans.PROPERTIES_UNIT_ID, unitId);
-        mInterstitialHandler = new MTGInterstitialHandler(context, hashMap);
+        mInterstitialHandler = new MTGInterstitialHandler(mContext, hashMap);
         mInterstitialHandler.setInterstitialListener(this);
         mInterstitialHandler.preload();
     }
@@ -75,7 +79,7 @@ public class MintegralInterstitialAdapter extends CustomEventInterstitial implem
 
     @Override
     protected void showInterstitial() {
-        if(mInterstitialHandler != null){
+        if (mInterstitialHandler != null) {
             mInterstitialHandler.show();
         }
     }
@@ -88,7 +92,7 @@ public class MintegralInterstitialAdapter extends CustomEventInterstitial implem
 
     @Override
     public void onInterstitialAdClick() {
-        if(mCustomEventInterstitialListener != null){
+        if (mCustomEventInterstitialListener != null) {
             mCustomEventInterstitialListener.onInterstitialClicked();
             mCustomEventInterstitialListener.onLeaveApplication();
         }
@@ -97,7 +101,7 @@ public class MintegralInterstitialAdapter extends CustomEventInterstitial implem
 
     @Override
     public void onInterstitialClosed() {
-        if(mCustomEventInterstitialListener != null){
+        if (mCustomEventInterstitialListener != null) {
             mCustomEventInterstitialListener.onInterstitialDismissed();
         }
         Log.e("Mintegral", "onInterstitialClosed");
@@ -105,7 +109,7 @@ public class MintegralInterstitialAdapter extends CustomEventInterstitial implem
 
     @Override
     public void onInterstitialLoadFail(String s) {
-        if(mCustomEventInterstitialListener != null){
+        if (mCustomEventInterstitialListener != null) {
             mCustomEventInterstitialListener.onInterstitialFailed(MoPubErrorCode.UNSPECIFIED);
         }
         Log.e("Mintegral", "onInterstitialLoadFail");
@@ -113,7 +117,7 @@ public class MintegralInterstitialAdapter extends CustomEventInterstitial implem
 
     @Override
     public void onInterstitialLoadSuccess() {
-        if(mCustomEventInterstitialListener != null){
+        if (mCustomEventInterstitialListener != null) {
             mCustomEventInterstitialListener.onInterstitialLoaded();
         }
         Log.e("Mintegral", "onInterstitialLoadSuccess");
@@ -126,7 +130,7 @@ public class MintegralInterstitialAdapter extends CustomEventInterstitial implem
 
     @Override
     public void onInterstitialShowSuccess() {
-        if(mCustomEventInterstitialListener != null){
+        if (mCustomEventInterstitialListener != null) {
             mCustomEventInterstitialListener.onInterstitialShown();
         }
         Log.e("Mintegral", "onInterstitialShowSuccess");

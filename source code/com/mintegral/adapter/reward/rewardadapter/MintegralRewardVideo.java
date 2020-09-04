@@ -1,16 +1,21 @@
 package com.mintegral.adapter.reward.rewardadapter;
 
 import android.app.Activity;
+import android.app.Application;
+import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.mintegral.adapter.common.AdapterCommonUtil;
 import com.mintegral.adapter.common.AdapterTools;
+import com.mintegral.adapter.common.MIntegralSDKManager;
 import com.mintegral.msdk.MIntegralConstans;
 import com.mintegral.msdk.MIntegralSDK;
 import com.mintegral.msdk.out.MIntegralSDKFactory;
@@ -28,7 +33,9 @@ import com.mopub.mobileads.MoPubRewardedVideoManager;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 
 /**
@@ -49,20 +56,20 @@ public class MintegralRewardVideo extends CustomEventRewardedVideo implements Re
 
 
     private MTGRewardVideoHandler mMvRewardVideoHandler;
-    private final static int LOAD_CANCEL_TIME = 20*1000;
+    private final static int LOAD_CANCEL_TIME = 20 * 1000;
     private final static int TIME_OUT_CODE = 0X001;
     private boolean hasRetrue = false;
-    private Handler mHandler = new Handler(Looper.getMainLooper()){
+    private Handler mHandler = new Handler(Looper.getMainLooper()) {
 
         @Override
         public void handleMessage(Message msg) {
-            switch (msg.what){
+            switch (msg.what) {
                 case TIME_OUT_CODE:
-                    if(mMvRewardVideoHandler != null && !hasRetrue ){
+                    if (mMvRewardVideoHandler != null && !hasRetrue) {
                         hasRetrue = true;
-                        if(mMvRewardVideoHandler.isReady()){
+                        if (mMvRewardVideoHandler.isReady()) {
                             MoPubRewardedVideoManager.onRewardedVideoLoadSuccess(MintegralRewardVideo.class, unitId);
-                        }else{
+                        } else {
                             MoPubRewardedVideoManager.onRewardedVideoLoadFailure(MintegralRewardVideo.class, unitId, MoPubErrorCode.NETWORK_TIMEOUT);
                         }
                     }
@@ -70,16 +77,17 @@ public class MintegralRewardVideo extends CustomEventRewardedVideo implements Re
             }
         }
     };
+    private String placementId = "";
 
 
     @Override
-    public void onLoadSuccess(String s) {
+    public void onLoadSuccess(String s, String var2) {
 
     }
 
     @Override
     public void onAdClose(boolean b, String s, float v) {
-        
+
         if (b) {
             MoPubRewardedVideoManager.onRewardedVideoCompleted(MintegralRewardVideo.class, null, MoPubReward.success(s, (int) v));
         }
@@ -89,18 +97,18 @@ public class MintegralRewardVideo extends CustomEventRewardedVideo implements Re
 
     @Override
     public void onVideoLoadFail(String s) {
-        Log.e("mvtest","====owner  onVideoLoadFail"+s);
-        if(!hasRetrue){
+        Log.e("mvtest", "====owner  onVideoLoadFail" + s);
+        if (!hasRetrue) {
             hasRetrue = true;
             MoPubRewardedVideoManager.onRewardedVideoLoadFailure(MintegralRewardVideo.class, unitId, MoPubErrorCode.UNSPECIFIED);
 
         }
-       }
+    }
 
     @Override
-    public void onVideoLoadSuccess(String s) {
-        Log.e("mvtest","====owner  onVideoLoadSuccess"+s);
-        if(!hasRetrue){
+    public void onVideoLoadSuccess(String s, String var2) {
+        Log.e("mvtest", "====owner  onVideoLoadSuccess" + s);
+        if (!hasRetrue) {
             hasRetrue = true;
             MoPubRewardedVideoManager.onRewardedVideoLoadSuccess(MintegralRewardVideo.class, unitId);
         }
@@ -121,18 +129,18 @@ public class MintegralRewardVideo extends CustomEventRewardedVideo implements Re
 
 
     @Override
-    public void onVideoAdClicked(String s) {
+    public void onVideoAdClicked(String s, String var2) {
         MoPubRewardedVideoManager.onRewardedVideoClicked(MintegralRewardVideo.class, unitId);
     }
 
     @Override
-    public void onEndcardShow(String s) {
+    public void onEndcardShow(String s, String var2) {
     }
 
 
     @Override
-    public void onVideoComplete(String s) {
-//        MoPubRewardedVideoManager.onRewardedVideoCompleted(MintegralRewardVideo.class,unitId);
+    public void onVideoComplete(String s, String var2) {
+
     }
 
     @Override
@@ -162,35 +170,34 @@ public class MintegralRewardVideo extends CustomEventRewardedVideo implements Re
 
         checkApplicationIdAndUserId();//检查unity的是否传参数
         try {
-            appid = serverParams.getString("appId");
-            unitId = serverParams.getString("unitId");
-            appkey = serverParams.getString("appKey");
-            mRewardId = serverParams.getString("rewardId");
-        } catch (JSONException e1) {
+            appid = serverParams.optString("appId", "");
+            unitId = serverParams.optString("unitId", "");
+            appkey = serverParams.optString("appKey", "");
+            mRewardId = serverParams.optString("rewardId", "");
+            placementId = serverParams.optString("placementId", "");
+        } catch (Exception e1) {
             e1.printStackTrace();
         }
-
         if (!isInitialized && !TextUtils.isEmpty(appid) && !TextUtils.isEmpty(appkey)) {
-            MIntegralSDK sdk = MIntegralSDKFactory.getMIntegralSDK();
-            if(!AdapterTools.canCollectPersonalInformation()){
-                sdk.setUserPrivateInfoType(launcherActivity.getApplication(), MIntegralConstans.AUTHORITY_ALL_INFO,MIntegralConstans.IS_SWITCH_OFF);
-            }else{
-                sdk.setUserPrivateInfoType(launcherActivity.getApplication(),MIntegralConstans.AUTHORITY_ALL_INFO,MIntegralConstans.IS_SWITCH_ON);
+            MIntegralSDK sdk = MIntegralSDKManager.getInstance().getMIntegralSDK();
+            if (!AdapterTools.canCollectPersonalInformation()) {
+                sdk.setUserPrivateInfoType(launcherActivity.getApplication(), MIntegralConstans.AUTHORITY_ALL_INFO, MIntegralConstans.IS_SWITCH_OFF);
+            } else {
+                sdk.setUserPrivateInfoType(launcherActivity.getApplication(), MIntegralConstans.AUTHORITY_ALL_INFO, MIntegralConstans.IS_SWITCH_ON);
             }
-            Map<String, String> map = sdk.getMTGConfigurationMap(appid, appkey);
-
+            Map<String, String> map = new HashMap<>();
             checkAndInitMediationSettings();
             if (!TextUtils.isEmpty(packageName)) {
                 map.put(MIntegralConstans.PACKAGE_NAME_MANIFEST, packageName);
             }
 
-            sdk.init(map, launcherActivity.getApplicationContext());
+            MIntegralSDKManager.getInstance().initialize(launcherActivity.getApplicationContext(), appkey, appid, false, map);
+//            sdk.init(map, launcherActivity.getApplicationContext());
             isInitialized = true;
-            AdapterCommonUtil.parseLocalExtras(localExtras,sdk);
+            AdapterCommonUtil.parseLocalExtras(localExtras, sdk);
         }
         return isInitialized;
     }
-
 
 
     @Nullable
@@ -208,13 +215,13 @@ public class MintegralRewardVideo extends CustomEventRewardedVideo implements Re
     @Override
     protected void loadWithSdkInitialized(@NonNull Activity activity, @NonNull Map<String, Object> localExtras, @NonNull Map<String, String> serverExtras) throws Exception {
 
-        mMvRewardVideoHandler = new MTGRewardVideoHandler(activity, unitId);
+        mMvRewardVideoHandler = new MTGRewardVideoHandler(activity, placementId, unitId);
         mMvRewardVideoHandler.setRewardVideoListener(this);
         AdapterCommonUtil.addChannel();
 
-        Log.e("mvtest","====load");
-        if(mHandler != null){
-            mHandler.sendEmptyMessageDelayed(TIME_OUT_CODE,LOAD_CANCEL_TIME);
+        Log.e("mvtest", "====load");
+        if (mHandler != null) {
+            mHandler.sendEmptyMessageDelayed(TIME_OUT_CODE, LOAD_CANCEL_TIME);
         }
         mMvRewardVideoHandler.load();
     }
@@ -268,7 +275,6 @@ public class MintegralRewardVideo extends CustomEventRewardedVideo implements Re
 
     private void checkApplicationIdAndUserId() {
         try {
-
 
         } catch (Exception e) {
         }

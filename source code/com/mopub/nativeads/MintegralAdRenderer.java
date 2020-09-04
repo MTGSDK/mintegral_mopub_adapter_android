@@ -1,8 +1,8 @@
 package com.mopub.nativeads;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,10 +18,6 @@ import com.mintegral.msdk.out.OnMTGMediaViewListener;
 import com.mintegral.msdk.widget.MTGAdChoice;
 import com.mopub.common.VisibleForTesting;
 import com.mopub.common.logging.MoPubLog;
-import com.mopub.nativeads.BaseNativeAd;
-import com.mopub.nativeads.MoPubAdRenderer;
-import com.mopub.nativeads.NativeImageHelper;
-import com.mopub.nativeads.NativeRendererHelper;
 
 import java.util.Collections;
 import java.util.HashMap;

@@ -30,12 +30,8 @@ The adapter is available via:
     ```
 
     dependencies {
-        implementation 'com.mintegral.thrid.adapter:mopub_adapter:3.4.2'
+        implementation 'com.mintegral.thrid.adapter:mopub_adapter:3.5.0'
     }
     ```
-
-2. **Manual integration with AAR**
-
-	Please put the mopub_adapter AAR into your project via [Mopub Adapter.zip](https://github.com/Mintegral-official/mintegral_admob_adapter_android/archive/master.zip)
 
 
